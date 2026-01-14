@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <title>สรุปรายรับรายจ่าย</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+</head>
+<body class="min-h-screen p-4 bg-cover bg-center" style="background-image: url('https://www.myaccount-cloud.com/upload/8567/iLpW4tht6u.jpg');">
+  <div class="max-w-4xl mx-auto space-y-6 backdrop-blur-sm bg-white/70 p-4 rounded-2xl">
+    <h1 class="text-xl font-semibold text-center tracking-wide">สรุปรายรับรายจ่าย Kittisak Shop</h1>
+
+    <!-- ลงทะเบียนบุคคล -->
+    <div class="bg-white/80 p-4 rounded-2xl shadow-sm">
+      <h2 class="text-sm font-medium mb-3 text-gray-600 uppercase tracking-wider">ลงทะเบียนชื่อบุคคล</h2>
+      <div class="flex gap-2">
+        <input id="personName" class="border border-gray-300 p-2 flex-1 rounded-lg text-sm" placeholder="ชื่อบุคคล" />
+        <button onclick="addPerson()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-lg text-sm">เพิ่ม</button>
+      </div>
+      <ul id="personList" class="mt-3 list-disc pl-6"></ul>
+    </div>
+
+    <!-- เพิ่มรายการรายรับรายจ่าย -->
+    <div class="bg-white/80 p-4 rounded-2xl shadow-sm">
+      <h2 class="text-sm font-medium mb-3 text-gray-600 uppercase tracking-wider">เพิ่มรายการ</h2>
+      <div class="grid md:grid-cols-5 gap-2">
+        <select id="personSelect" class="border border-gray-300 p-2 rounded-lg text-sm"></select>
+        <select id="type" class="border border-gray-300 p-2 rounded-lg text-sm">
+          <option value="income">รายรับ</option>
+          <option value="expense">รายจ่าย</option>
+        </select>
+        <input id="amount" type="number" class="border border-gray-300 p-2 rounded-lg text-sm" placeholder="จำนวนเงิน" />
+        <input id="note" class="border border-gray-300 p-2 rounded-lg text-sm" placeholder="ทำอะไร / หมายเหตุ" />
+        <button onclick="addTransaction()" class="bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm">บันทึก</button>
+      </div>
+    </div>
+
+    <!-- สรุปผล -->
+    <div class="bg-white/80 p-4 rounded-2xl shadow-sm">
+      <h2 class="text-sm font-medium mb-3 text-gray-600 uppercase tracking-wider">สรุปผล</h2>
+      
+        <p class="text-xs text-gray-500 mt-2">สแกนเพื่อเปิดหน้านี้</p>
+      </div>
+      <div id="summary" class="space-y-2"></div>
+    </div>
+  </div>
+
+
+
+<script>
+  let people = JSON.parse(localStorage.getItem('people')) || [];
+  let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+  function save() {
+    localStorage.setItem('people', JSON.stringify(people));
+    localStorage.setItem('transactions', JSON.stringify(transactions));
+  }
+
+  function addPerson() {
+    const name = document.getElementById('personName').value.trim();
+    if (!name) return;
+    people.push(name);
+    document.getElementById('personName').value = '';
+    save();
+    render();
+  }
+
+  function addTransaction() {
+    const person = document.getElementById('personSelect').value;
+    const type = document.getElementById('type').value;
+    const amount = parseFloat(document.getElementById('amount').value);
+    if (!person || !amount) return;
+    const note = document.getElementById('note').value.trim();
+    transactions.push({ person, type, amount, note });
+    document.getElementById('amount').value = '';
+    document.getElementById('note').value = '';
+    save();
+    render();
+  }
+
+  function render() {
+    // รายชื่อบุคคล
+    const personList = document.getElementById('personList');
+    const personSelect = document.getElementById('personSelect');
+    personList.innerHTML = '';
+    personSelect.innerHTML = '<option value="">เลือกบุคคล</option>';
+    people.forEach(p => {
+      const li = document.createElement('li');
+      li.textContent = p;
+      personList.appendChild(li);
+
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      personSelect.appendChild(opt);
+    });
+
+    // สรุป
+    const summary = {};
+    transactions.forEach(t => {
+      if (!summary[t.person]) summary[t.person] = { income: 0, expense: 0 };
+      summary[t.person][t.type] += t.amount;
+    });
+
+    const summaryDiv = document.getElementById('summary');
+    summaryDiv.innerHTML = '';
+    Object.keys(summary).forEach(p => {
+      const net = summary[p].income - summary[p].expense;
+      summaryDiv.innerHTML += `
+        <div class="bg-blue-900/90 text-white p-4 rounded-2xl">
+          <strong>${p}</strong><br>
+          รายรับ: ${summary[p].income} บาท<br>
+          รายจ่าย: ${summary[p].expense} บาท<br>
+          คงเหลือ: <span class="${net >= 0 ? 'text-green-300' : 'text-red-300'}">${net}</span> บาท
+          <div class="mt-3 text-xs text-blue-200 space-y-1">
+            ${transactions.filter(t => t.person === p).map(t => `
+              <div>• ${t.type === 'income' ? 'รายรับ' : 'รายจ่าย'} ${t.amount} บาท : ${t.note || '-'} </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  render();
+
+  
+</script>
+</body>
+</html>
