@@ -39,8 +39,9 @@
     <!-- สรุปผล -->
     <div class="bg-white/80 p-4 rounded-2xl shadow-sm">
       <h2 class="text-sm font-medium mb-3 text-gray-600 uppercase tracking-wider">สรุปผล</h2>
-      
-        <p class="text-xs text-gray-500 mt-2">สแกนเพื่อเปิดหน้านี้</p>
+      <div class="mb-4 text-center">
+        <div id="qrcode" class="mx-auto"></div>
+        <p class="text-xs text-gray-500 mt-2">สแกนเพื่อเข้าเว็บนี้</p>
       </div>
       <div id="summary" class="space-y-2"></div>
     </div>
@@ -48,6 +49,7 @@
 
 
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
   let people = JSON.parse(localStorage.getItem('people')) || [];
   let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
@@ -64,6 +66,14 @@
     document.getElementById('personName').value = '';
     save();
     render();
+
+  // QR Code สำหรับเข้าเว็บนี้
+  new QRCode(document.getElementById("qrcode"), {
+    text: window.location.href,
+    width: 160,
+    height: 160,
+    correctLevel: QRCode.CorrectLevel.H
+  });
   }
 
   function addTransaction() {
@@ -72,9 +82,15 @@
     const amount = parseFloat(document.getElementById('amount').value);
     if (!person || !amount) return;
     const note = document.getElementById('note').value.trim();
-    transactions.push({ person, type, amount, note });
+    transactions.push({ id: Date.now(), person, type, amount, note });
     document.getElementById('amount').value = '';
     document.getElementById('note').value = '';
+    save();
+    render();
+  }
+
+  function deleteTransaction(id) {
+    transactions = transactions.filter(t => t.id !== id);
     save();
     render();
   }
@@ -115,7 +131,10 @@
           คงเหลือ: <span class="${net >= 0 ? 'text-green-300' : 'text-red-300'}">${net}</span> บาท
           <div class="mt-3 text-xs text-blue-200 space-y-1">
             ${transactions.filter(t => t.person === p).map(t => `
-              <div>• ${t.type === 'income' ? 'รายรับ' : 'รายจ่าย'} ${t.amount} บาท : ${t.note || '-'} </div>
+              <div class="flex justify-between items-center gap-2">
+                <span>• ${t.type === 'income' ? 'รายรับ' : 'รายจ่าย'} ${t.amount} บาท : ${t.note || '-'}</span>
+                <button onclick="deleteTransaction(${t.id})" class="text-red-300 hover:text-red-400 text-xs">ลบ</button>
+              </div>
             `).join('')}
           </div>
         </div>
